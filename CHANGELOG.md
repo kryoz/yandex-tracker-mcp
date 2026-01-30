@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.2] - 2026-01-30
+
+### Features
+- Add `issue_add_worklog` MCP tool to add worklog entries (log spent time) to issues
+- Add `issue_update_worklog` MCP tool to update existing worklog entries
+- Add `issue_delete_worklog` MCP tool to delete worklog entries from issues
+
+### Internal
+- Remove verbose option from pytest configuration
+
 ## [0.6.1] - 2026-01-17
 
 ### Internal
