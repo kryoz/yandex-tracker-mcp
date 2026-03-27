@@ -109,11 +109,7 @@ def register_issue_read_tools(settings: Settings, mcp: FastMCP[Any]) -> None:
             auth=get_yandex_auth(ctx),
         )
 
-        return [
-            link.object.key
-            for link in links
-            if link.object and link.object.key
-        ]
+        return [link.object.key for link in links if link.object and link.object.key]
 
     @mcp.tool(
         title="Find Issues",

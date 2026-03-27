@@ -172,7 +172,6 @@ class TestIssueGetLinkKeys:
         mock_issues_protocol: AsyncMock,
         sample_link: IssueLink,
     ) -> None:
-        from mcp_tracker.tracker.proto.types.refs import IssueReference
 
         links_with_none_key = [
             sample_link,
