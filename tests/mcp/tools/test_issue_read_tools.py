@@ -132,6 +132,78 @@ class TestIssueGetLinks:
         assert content[0]["direction"] == sample_links[0].direction
 
 
+class TestIssueGetLinkKeys:
+    async def test_returns_link_keys(
+        self,
+        client_session: ClientSession,
+        mock_issues_protocol: AsyncMock,
+        sample_links: list[IssueLink],
+    ) -> None:
+        mock_issues_protocol.issues_get_links.return_value = sample_links
+
+        result = await client_session.call_tool(
+            "issue_get_link_keys", {"issue_id": "TEST-123"}
+        )
+
+        assert not result.isError
+        mock_issues_protocol.issues_get_links.assert_called_once()
+        content = get_tool_result_content(result)
+        assert isinstance(content, list)
+        assert content == ["TEST-456"]
+
+    async def test_returns_empty_list_when_no_links(
+        self,
+        client_session: ClientSession,
+        mock_issues_protocol: AsyncMock,
+    ) -> None:
+        mock_issues_protocol.issues_get_links.return_value = []
+
+        result = await client_session.call_tool(
+            "issue_get_link_keys", {"issue_id": "TEST-123"}
+        )
+
+        assert not result.isError
+        content = get_tool_result_content(result)
+        assert content == []
+
+    async def test_excludes_links_without_key(
+        self,
+        client_session: ClientSession,
+        mock_issues_protocol: AsyncMock,
+        sample_link: IssueLink,
+    ) -> None:
+        from mcp_tracker.tracker.proto.types.refs import IssueReference
+
+        links_with_none_key = [
+            sample_link,
+            IssueLink.model_construct(
+                id=2,
+                object=None,
+            ),
+        ]
+        mock_issues_protocol.issues_get_links.return_value = links_with_none_key
+
+        result = await client_session.call_tool(
+            "issue_get_link_keys", {"issue_id": "TEST-123"}
+        )
+
+        assert not result.isError
+        content = get_tool_result_content(result)
+        assert content == ["TEST-456"]
+
+    async def test_restricted_queue_raises_error(
+        self,
+        client_session_with_limits: ClientSession,
+        mock_issues_protocol: AsyncMock,
+    ) -> None:
+        result = await client_session_with_limits.call_tool(
+            "issue_get_link_keys", {"issue_id": "RESTRICTED-123"}
+        )
+
+        assert result.isError
+        mock_issues_protocol.issues_get_links.assert_not_called()
+
+
 class TestIssuesFind:
     async def test_finds_issues(
         self,

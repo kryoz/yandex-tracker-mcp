@@ -79,7 +79,7 @@ def register_issue_read_tools(settings: Settings, mcp: FastMCP[Any]) -> None:
 
     @mcp.tool(
         title="Get Issue Links",
-        description="Get a Yandex Tracker issue related links to other issues by its id",
+        description="Get a Yandex Tracker issue related links to other issues by its id with metadata",
         annotations=ToolAnnotations(readOnlyHint=True),
     )
     async def issue_get_links(
@@ -92,6 +92,28 @@ def register_issue_read_tools(settings: Settings, mcp: FastMCP[Any]) -> None:
             issue_id,
             auth=get_yandex_auth(ctx),
         )
+
+    @mcp.tool(
+        title="Get Issue Link Keys",
+        description="Get a Yandex Tracker issue related links to other issues by its id returning only their keys",
+        annotations=ToolAnnotations(readOnlyHint=True),
+    )
+    async def issue_get_link_keys(
+        ctx: Context[Any, AppContext],
+        issue_id: IssueID,
+    ) -> list[str]:
+        check_issue_access(settings, issue_id)
+
+        links = await ctx.request_context.lifespan_context.issues.issues_get_links(
+            issue_id,
+            auth=get_yandex_auth(ctx),
+        )
+
+        return [
+            link.object.key
+            for link in links
+            if link.object and link.object.key
+        ]
 
     @mcp.tool(
         title="Find Issues",
