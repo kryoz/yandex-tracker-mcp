@@ -156,6 +156,31 @@ def register_issue_read_tools(settings: Settings, mcp: FastMCP[Any]) -> None:
         return issues
 
     @mcp.tool(
+        title="Fetch Issues Description",
+        description="Find Yandex Tracker issues by queue and/or created date, returning only key, summary, and description fields",
+        annotations=ToolAnnotations(readOnlyHint=True),
+    )
+    async def issues_find_light(
+        ctx: Context[Any, AppContext],
+        query: YTQuery,
+        page: PageParam = 1,
+        per_page: PerPageParam = 100,
+    ) -> list[Issue]:
+        """Find issues with only key, summary, and description fields."""
+        issues = await ctx.request_context.lifespan_context.issues.issues_find(
+            query=query,
+            per_page=per_page,
+            page=page,
+            auth=get_yandex_auth(ctx),
+        )
+
+        # Set all fields except key, summary, description to None
+        light_fields = {"key", "summary", "description"}
+        set_non_needed_fields_null(issues, light_fields)
+
+        return issues
+
+    @mcp.tool(
         title="Count Issues",
         description="Get the count of Yandex Tracker issues matching a query",
         annotations=ToolAnnotations(readOnlyHint=True),

@@ -259,6 +259,74 @@ class TestIssuesFind:
             assert issue.get("description") is None
 
 
+class TestIssuesFindLight:
+    async def test_finds_issues_with_light_fields(
+        self,
+        client_session: ClientSession,
+        mock_issues_protocol: AsyncMock,
+        sample_issues: list[Issue],
+    ) -> None:
+        mock_issues_protocol.issues_find.return_value = sample_issues
+
+        result = await client_session.call_tool(
+            "issues_find_light", {"query": "Queue: TEST"}
+        )
+
+        assert not result.isError
+        mock_issues_protocol.issues_find.assert_called_once()
+        content = get_tool_result_content(result)
+        assert isinstance(content, list)
+        assert len(content) == len(sample_issues)
+        # Key и summary должны быть заполнены
+        assert content[0]["key"] == sample_issues[0].key
+        assert content[0]["summary"] == sample_issues[0].summary
+
+    async def test_only_key_summary_description_fields(
+        self,
+        client_session: ClientSession,
+        mock_issues_protocol: AsyncMock,
+        sample_issues: list[Issue],
+    ) -> None:
+        """Проверяет, что только ключевые поля возвращаются."""
+        mock_issues_protocol.issues_find.return_value = sample_issues
+
+        result = await client_session.call_tool(
+            "issues_find_light", {"query": "Queue: TEST"}
+        )
+
+        assert not result.isError
+        content = get_tool_result_content(result)
+        # Проверяем, что другие поля установлены в None
+        for issue in content:
+            # Эти поля должны быть заполнены
+            assert "key" in issue
+            assert "summary" in issue
+            # description может быть None или заполнен
+            # Остальные поля должны быть None или отсутствовать
+            for field in ["type", "priority", "assignee", "status"]:
+                assert issue.get(field) is None
+
+    async def test_with_pagination(
+        self,
+        client_session: ClientSession,
+        mock_issues_protocol: AsyncMock,
+        sample_issues: list[Issue],
+    ) -> None:
+        mock_issues_protocol.issues_find.return_value = sample_issues
+
+        result = await client_session.call_tool(
+            "issues_find_light",
+            {"query": "Queue: TEST", "page": 2, "per_page": 50},
+        )
+
+        assert not result.isError
+        call_kwargs = mock_issues_protocol.issues_find.call_args.kwargs
+        assert call_kwargs["page"] == 2
+        assert call_kwargs["per_page"] == 50
+        content = get_tool_result_content(result)
+        assert len(content) == len(sample_issues)
+
+
 class TestIssuesCount:
     async def test_returns_count(
         self,
